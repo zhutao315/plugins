@@ -32,15 +32,8 @@
     var $promise = {
         _queue:[],
         then:function (fn) {
-            var that = this;
-
             this._queue.push(function () {
-                setTimeout(function () {
-                    that._queue.shift();
-                    if(that._queue.length > 0){
-                        that._queue[0]();
-                    }
-                },time);
+                fn&&fn();
             });
 
             if(this._queue.length == 1){
@@ -49,37 +42,26 @@
 
             return this;
         },
-        delay:function (time) {
-            var that = this;
-
-            this._queue.push(function () {
-                setTimeout(function () {
-                    that._queue.shift();
-                    if(that._queue.length > 0){
-                        that._queue[0]();
-                    }
-                },time);
-            });
-
-            if(this._queue.length == 1){
+        next:function () {
+            this._queue.shift();
+            if(this._queue.length > 0){
                 this._queue[0]();
             }
+        },
+        delay:function (time) {
+            var that = this;
+            
+            this.then(function () {
+                setTimeout(that.next.bind(that),time);
+            });
 
             return this;
         },
         animate:function (prop,speed) {
             var that = this;
             this._queue.push(function () {
-                $.fn.animate.bind(that)(prop,speed,null,function () {
-                    that._queue.shift();
-                    if(that._queue.length > 0){
-                        that._queue[0]();
-                    }
-                });
+                $.fn.animate.bind(that)(prop,speed,null,that.next.bind(that));
             });
-            if(this._queue.length == 1){
-                this._queue[0]();
-            }
             return this;
         }
     };
