@@ -7,26 +7,28 @@
     };
 
     var getImg = function (img,callback){
-        var imgStr = img;
+
         if(typeof img == 'string'){
             var imageCache = GET(img);
             if(imageCache) return callback&&callback(imageCache);
             var imgObj = new Image();
             imgObj.src = img;
             img = imgObj;
-
         }else{
 
             var imageCache = GET(img.dataSrc);
-            if(imageCache) return callback&&callback(imageCache);
+            if(imageCache){
+                img.src = imageCache;
+                return callback&&callback(imageCache);
+            }
 
             img.src = img.dataSrc;
         }
 
         img.onload = function () {
             renderCvs(img,function (data){
-                SET(img.src,data);
-                if(typeof imgStr == 'string') callback&&callback(data);
+                SET(img.dataSrc||img.src,data);
+                callback&&callback(data);
             });
         }
     };
@@ -52,10 +54,6 @@
         }
     }
 
-    /*getImg("http://192.168.1.198:8000/xshop-web-pinpin/webapp/img/pin-default.jpg",function (data){
-        console.log(data);
-    });*/
-
     var deffer = {
         _queue:[],
         status:"",
@@ -80,6 +78,7 @@
         deffer.resolve(data);
     });
 
+    
 
     $(function () {
         $("img[data-src]").forEach(function (value,key) {
@@ -89,13 +88,14 @@
             var locked = false;
             //优先显示默认图片
             deffer.then(function (data) {
-                if(locked) return;
+                //如果图片已加载完成或者直接从缓存中取的则不用渲染默认图片
+                if(value.complete||value.complete === undefined) return;
                 value.src = data;
             });
             //加载显示data-src上的图片
             getImg(value,function (data) {
-                locked = true;
-                value.src = data;
+                /*if typeof value === 'string'
+                value.src = data;*/
             });
         });
     });
